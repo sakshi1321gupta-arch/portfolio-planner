@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Study Planner</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background-color: #f2f2f2;
+    }
+
+    input {
+      padding: 10px;
+      width: 200px;
+      margin: 10px;
+    }
+
+    button {
+      padding: 8px 12px;
+      background-color: green;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    li {
+      list-style: none;
+      margin: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .delete-btn {
+      background-color: red;
+      padding: 5px 8px;
+      cursor: pointer;
+      border: none;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Study Planner</h2>
+
+<input type="text" id="task" placeholder="Enter task">
+<button onclick="addTask()">Add</button>
+
+<ul id="list"></ul>
+
+<script>
+async function addTask() {
+  let taskInput = document.getElementById("task");
+  let task = taskInput.value;
+
+  if (task.trim() === "") {
+    alert("Enter a task");
+    return;
+  }
+
+  await fetch("http://localhost:5000/add-task", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ title: task })
+  });
+
+  taskInput.value = "";
+  loadTasks();
+}
+
+async function loadTasks() {
+  let res = await fetch("http://localhost:5000/tasks");
+  let data = await res.json();
+
+  console.log(data); // 🔍 Debug
+
+  let list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.forEach(task => {
+    const id = task.id || task;
+    const title = task.title || task || "(no task)";
+
+    let li = document.createElement("li");
+
+    let textSpan = document.createElement("span");
+    textSpan.textContent = title;
+    li.appendChild(textSpan);
+
+    let delBtn = document.createElement("button");
+    delBtn.innerText = "X";
+    delBtn.className = "delete-btn";
+
+    delBtn.onclick = async () => {
+      const key = task.id ? task.id : encodeURIComponent(title);
+      await fetch(`http://localhost:5000/delete-task/${key}`, {
+        method: "DELETE"
+      });
+      loadTasks();
+    };
+
+    li.appendChild(delBtn);
+    list.appendChild(li);
+  });
+}
+
+// Load tasks on page start
+loadTasks();
+</script>
+
+</body>
+</html>
